@@ -1,0 +1,8 @@
+.msg {
+	padding: .25em;
+}
+
+input[type='text'] {
+	margin: .5em;
+	padding: .5em;
+}
