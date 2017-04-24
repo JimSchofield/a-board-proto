@@ -75,7 +75,7 @@ var app = new Vue({
     el: '#board',
     template: `
   <div class="container">
-	  <h1>BOARD</h1>
+	  <h1>A Board</h1>
 	  <div class="row">
 		  <div class="left">
 			<img
@@ -111,16 +111,17 @@ var app = new Vue({
 
 
 //socket Methods
+socket.on('setup board state', function(userlist, msgList) {
+	app.userList = userlist;
+	app.msgList = msgList;
+})
+
 socket.on('chat msg', function(msg) {
 	app.msgList.unshift(msg);
 })
 
 socket.on('user added', function(user) {
 	app.userList.unshift(user);
-})
-
-socket.on('user list', function(list) {
-	app.userList = list;
 })
 
 socket.on('user left', function(socketID) {

@@ -3,7 +3,11 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-require('./socket/socket.js')(io);
+//State variables
+var userList = [];
+var msgList = []; 
+
+require('./socket/socket.js')(io, userList, msgList);
 
 var port = process.env.PORT || 3000;
 

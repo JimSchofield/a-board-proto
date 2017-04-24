@@ -1,11 +1,8 @@
-module.exports = function(io) {
-
-	var userList = [];
-	var msgList = []; 
+module.exports = function(io, userList, msgList) {
 
 	io.on('connection', function(socket) {
 
-		io.to(socket.id).emit('user list', userList);
+		io.to(socket.id).emit('setup board state', userList, msgList);
 
 		socket.on('chat msg', function(msg){
 			msgList.unshift(msg);
