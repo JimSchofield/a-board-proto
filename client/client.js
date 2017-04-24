@@ -3,9 +3,10 @@ var socket = io();
 Vue.component('sign-in', {
 	template: `
 	<div class="signIn">
-		<label>Please enter a username</label>
+		<h4 class="removeTopMargin">Please enter a username:</h4>
 		<input 
 			type="text"
+			maxlength="20"
 			v-model='username'
 			@keyup.enter='onChangeName'
 			>
@@ -18,7 +19,9 @@ Vue.component('sign-in', {
 	},
 	methods: {
 		onChangeName: function(event) {
-			this.$emit('changeName', this.username);
+			if (this.username !== '') {
+				this.$emit('changeName', this.username);
+			}
 		}
 	}
 })
@@ -27,7 +30,8 @@ Vue.component('chat-view', {
     template: `
 	<div class="chatContainer">
 		<div v-for='msg in msgList' class="msg">
-			{{ msg.name }} - {{ msg.time }} : {{ msg.msg }}
+			<span class="msgDetails">{{ msg.name }} {{ msg.time }}</span>
+			<p class="pSmallMargin">{{ msg.msg }}</p>
 		</div>
 	</div>
 	`,
@@ -51,16 +55,18 @@ Vue.component('input-bar', {
     methods: {
     	emitMsg: function() {
 
-    		let d = new Date();
-    		let currentTime = (d.getHours() % 12) + ':' + d.getMinutes() + ':' + d.getSeconds();
+    		if(this.unsentMessage !== '') {
+	    		let d = new Date();
+	    		let currentTime = (d.getHours() % 12) + ':' + d.getMinutes() + ':' + d.getSeconds();
 
-    		socket.emit('chat msg', {
-    			msg: this.unsentMessage,
-    			name: this.username,
-    			time: currentTime
-    		});
+	    		socket.emit('chat msg', {
+	    			msg: this.unsentMessage,
+	    			name: this.username,
+	    			time: currentTime
+	    		});
 
-    		this.unsentMessage = '';
+	    		this.unsentMessage = '';
+    		}
     	},
     }
 })
@@ -70,30 +76,57 @@ var app = new Vue({
     template: `
   <div class="container">
 	  <h1>BOARD</h1>
-	  <sign-in
-	  	v-if='this.username===""'
-	  	@changeName=changeUsername></sign-in>
-	  <chat-view 
-	  	:msgList='msgList'></chat-view>
-	  <input-bar 
-	  	v-if='this.username!==""'
-	  	:username='username'></input-bar>
+	  <div class="row">
+		  <div class="left">
+			<img
+				v-for="user in userList" 
+				:src='"http://placehold.it/100x100?text=" + user.username'>
+		  </div>
+		  <div class="right">
+			  <sign-in
+			  	v-if='this.username===""'
+			  	@changeName=changeUsername></sign-in>
+			  <input-bar 
+			  	v-if='this.username!==""'
+			  	:username='username'></input-bar>
+			  <chat-view 
+			  	:msgList='msgList'></chat-view>
+		  </div>
+	  </div>
   </div>
   `,
     data: {
         msgList: [],
+        userList: [],
         username: ''
     },
 	methods: {
 		changeUsername: function(username) {
-			console.log('username changed to: ' + username);
 			this.username = username;
+			socket.emit('user added', username);
 		}
 	}
 })
 
+
+
+//socket Methods
 socket.on('chat msg', function(msg) {
-	app.msgList.push(msg);
+	app.msgList.unshift(msg);
+})
+
+socket.on('user added', function(user) {
+	app.userList.unshift(user);
+})
+
+socket.on('user list', function(list) {
+	app.userList = list;
+})
+
+socket.on('user left', function(socketID) {
+	app.userList = app.userList.filter(function(user) {
+		return user.socketID !== socketID;
+	})
 })
 
 
