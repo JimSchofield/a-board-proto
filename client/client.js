@@ -44,7 +44,8 @@ Vue.component('input-bar', {
 		type='text' 
 		v-model='unsentMessage' 
 		@keyup.enter='emitMsg'
-		placeholder='Enter some text...'>
+		placeholder='Enter some text...'
+		@keyup='typingMsg'>
 	`,
     data: function() {
         return {
@@ -53,6 +54,9 @@ Vue.component('input-bar', {
     },
     props: ['username'],
     methods: {
+    	typingMsg: function() {
+    		socket.emit('typing', this.username);
+    	},
     	emitMsg: function() {
 
     		if(this.unsentMessage !== '') {
@@ -78,9 +82,14 @@ var app = new Vue({
 	  <h1>A Board</h1>
 	  <div class="row">
 		  <div class="left">
-			<img
-				v-for="user in userList" 
-				:src='"http://placehold.it/100x100?text=" + user.username'>
+		  	<div v-if="userList.length <= 0"><p>No one is online presently!</p></div>
+		  	<div v-else>
+		  		<p class="pSmallMargin">Online:</p>
+				<img
+					v-for="user in userList" 
+					:src='"http://placehold.it/100x100?text=" + user.username'
+					:class='{ isTyping: user.typing}'>
+			</div>
 		  </div>
 		  <div class="right">
 			  <sign-in
@@ -102,7 +111,6 @@ var app = new Vue({
     },
 	methods: {
 		changeUsername: function(username) {
-			this.username = username;
 			socket.emit('user added', username);
 		}
 	}
@@ -111,27 +119,51 @@ var app = new Vue({
 
 
 //socket Methods
+
 socket.on('setup board state', function(userlist, msgList) {
 	app.userList = userlist;
 	app.msgList = msgList;
+})
+
+socket.on('user added', function(user) {
+	app.username = user.username;
+	app.userList.unshift(user);
 })
 
 socket.on('chat msg', function(msg) {
 	app.msgList.unshift(msg);
 })
 
-socket.on('user added', function(user) {
-	app.userList.unshift(user);
+var timeout = null;
+socket.on('typing', function(username) {
+	clearTimeout(timeout);
+
+	toggleTypeStatus(username, app.userList, true);
+
+	timeout = setTimeout(function() {
+		toggleTypeStatus(username, app.userList, false);
+	}, 1000)
 })
 
 socket.on('user left', function(socketID) {
 	app.userList = app.userList.filter(function(user) {
 		return user.socketID !== socketID;
+
 	})
 })
 
 
 //AUX methods
+
+function toggleTypeStatus(username, array, status) {
+	array.forEach(function(element) {
+
+		if(element.username === username) {
+			element.typing = status;
+		}
+	})
+}
+
 function formatDate(date) {
   var monthNames = [
     "January", "February", "March",
