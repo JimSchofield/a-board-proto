@@ -12,7 +12,7 @@ Vue.component('sign-in', {
 			>
 	</div>
 	`,
-	props: ['username'],
+	props: ['username', 'changeUsername'],
 	data: function() {
 		return {
 			unsentName: ''
@@ -21,7 +21,7 @@ Vue.component('sign-in', {
 	methods: {
 		onChangeName: function(event) {
 			if (this.unsentName !== '') {
-				app.username = this.unsentName;
+				this.changeUsername(this.unsentName);
 				socket.emit('user added', this.unsentName);
 			}
 		}
@@ -97,9 +97,11 @@ var app = new Vue({
 			  <sign-in
 			  	v-if='this.username===""'
 			  	:username='username'
+			  	:changeUsername='changeUsername'
 			  	></sign-in>
 			  <input-bar 
-			  	v-if='this.username!==""'></input-bar>
+			  	v-if='this.username!==""'
+			  	:username='username'></input-bar>
 			  <chat-view 
 			  	:msgList='msgList'></chat-view>
 		  </div>
@@ -111,20 +113,11 @@ var app = new Vue({
         	userList: [],
         	username: ''
 	},
-    // computed: {
-    // 	username: {
-	   //  	get: {
-	   //  		getUsername: function() {
-	   //  			return this.username;
-	   //  		}
-	   //  	},
-		  //   set: {
-	   //  		setUsername: function(name) {
-	   //  			this.username = name;
-	   //  		}	
-	   //  	}
-    // 	}	
-    // }
+	methods: {
+		changeUsername: function(name) {
+			this.username = name;
+		}
+	}
 })
 
 
