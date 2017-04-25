@@ -7,20 +7,22 @@ Vue.component('sign-in', {
 		<input 
 			type="text"
 			maxlength="20"
-			v-model='username'
+			v-model='unsentName'
 			@keyup.enter='onChangeName'
 			>
 	</div>
 	`,
+	props: ['username'],
 	data: function() {
 		return {
-			username: ''
+			unsentName: ''
 		}
 	},
 	methods: {
 		onChangeName: function(event) {
-			if (this.username !== '') {
-				this.$emit('changeName', this.username);
+			if (this.unsentName !== '') {
+				app.username = this.unsentName;
+				socket.emit('user added', this.unsentName);
 			}
 		}
 	}
@@ -55,7 +57,7 @@ Vue.component('input-bar', {
     props: ['username'],
     methods: {
     	typingMsg: function() {
-    		socket.emit('typing', this.username);
+    		socket.emit('typing', app.username);
     	},
     	emitMsg: function() {
 
@@ -94,10 +96,10 @@ var app = new Vue({
 		  <div class="right">
 			  <sign-in
 			  	v-if='this.username===""'
-			  	@changeName=changeUsername></sign-in>
+			  	:username='username'
+			  	></sign-in>
 			  <input-bar 
-			  	v-if='this.username!==""'
-			  	:username='username'></input-bar>
+			  	v-if='this.username!==""'></input-bar>
 			  <chat-view 
 			  	:msgList='msgList'></chat-view>
 		  </div>
@@ -105,15 +107,24 @@ var app = new Vue({
   </div>
   `,
     data: {
-        msgList: [],
-        userList: [],
-        username: ''
-    },
-	methods: {
-		changeUsername: function(username) {
-			socket.emit('user added', username);
-		}
-	}
+    		msgList: [],
+        	userList: [],
+        	username: ''
+	},
+    // computed: {
+    // 	username: {
+	   //  	get: {
+	   //  		getUsername: function() {
+	   //  			return this.username;
+	   //  		}
+	   //  	},
+		  //   set: {
+	   //  		setUsername: function(name) {
+	   //  			this.username = name;
+	   //  		}	
+	   //  	}
+    // 	}	
+    // }
 })
 
 
@@ -126,7 +137,6 @@ socket.on('setup board state', function(userlist, msgList) {
 })
 
 socket.on('user added', function(user) {
-	app.username = user.username;
 	app.userList.unshift(user);
 })
 
@@ -136,6 +146,8 @@ socket.on('chat msg', function(msg) {
 
 var timeout = null;
 socket.on('typing', function(username) {
+
+	console.log(username);
 	clearTimeout(timeout);
 
 	toggleTypeStatus(username, app.userList, true);
